@@ -11,6 +11,7 @@ import time
 import uuid
 import struct
 import tempfile
+import socket
 from pathlib import Path
 
 # IPC Opcodes
@@ -19,6 +20,22 @@ OP_FRAME = 1
 OP_CLOSE = 2
 OP_PING = 3
 OP_PONG = 4
+
+LOCK_PORT = 64321
+
+def ensure_single_instance():
+    """
+    Ensures that only one instance of terminal_rpc.py runs at a time.
+    Binds a local socket port as a mutex lock.
+    """
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("127.0.0.1", LOCK_PORT))
+        s.listen(1)
+        return s
+    except Exception:
+        print("[Notice] Another instance of Terminal Discord Presence is already running. Exiting.")
+        sys.exit(0)
 
 def get_state_file_path():
     """Get cross-platform or Windows temp path for shell state sharing."""
@@ -36,7 +53,6 @@ def sanitize_path(path_str, privacy_mode="folder"):
     if not path_str or privacy_mode == "hidden":
         return "Workspace"
 
-    # Normalize backslashes
     path_str = path_str.replace("\\", "/")
     if path_str.endswith("/") and len(path_str) > 1 and not path_str.endswith(":/"):
         path_str = path_str.rstrip("/")
@@ -115,22 +131,13 @@ def read_shell_state(state_path=None):
 def format_status(active_shells, state_data, config):
     """
     Formats details, state, and asset info for Discord activity payload.
-    Ensures active directory and tabs are always dynamically rendered.
+    Uses dynamic state from shell hook without static directory fallbacks.
     """
     emojis = config.get("emojis", {})
     assets = config.get("assets", {})
     privacy = config.get("privacy_mode", "folder")
 
-    # If no processes found and no state file present, show idle
-    if not active_shells and not state_data:
-        return {
-            "details": f"{emojis.get('idle', '💤')} Idle / Resting",
-            "state": "No active terminal",
-            "small_image": None,
-            "small_text": None
-        }
-
-    # Determine shell type and icon
+    # Determine shell type
     shell_name = "PowerShell"
     small_image = assets.get("powershell_small_image", "powershell_icon")
     small_text = assets.get("powershell_small_text", "PowerShell")
@@ -175,7 +182,7 @@ def format_status(active_shells, state_data, config):
     tab_count = len(active_shells) if active_shells else 1
     tab_str = f" ({tab_count} tab{'s' if tab_count > 1 else ''})" if config.get("show_tabs") and tab_count > 1 else ""
 
-    # User context and CWD calculation
+    # User context and CWD calculation from state_data
     cwd = state_data.get("cwd") if state_data else None
     user_ctx = state_data.get("user") if state_data else None
     folder_emoji = emojis.get("folder", "📁")
@@ -187,13 +194,7 @@ def format_status(active_shells, state_data, config):
         else:
             state_str = f"{folder_emoji} {sanitized_cwd}"
     else:
-        # Fallback to current working directory if available
-        try:
-            fallback_cwd = os.getcwd()
-            sanitized_cwd = sanitize_path(fallback_cwd, privacy)
-            state_str = f"{folder_emoji} {user_ctx + ' ' if user_ctx else ''}{sanitized_cwd}"
-        except Exception:
-            state_str = f"{folder_emoji} {user_ctx if user_ctx else 'Terminal Session'}"
+        state_str = f"{folder_emoji} {user_ctx if user_ctx else 'Interactive Shell'}"
 
     details_str = f"{shell_emoji} {shell_name}{tab_str}"
 
@@ -357,6 +358,8 @@ def scan_running_terminals():
     return running_shells
 
 def main():
+    lock_socket = ensure_single_instance()
+
     config = load_config()
     client_id = config.get("client_id")
     update_interval = config.get("update_interval", 3)

@@ -22,9 +22,12 @@ function Update-DiscordTerminalState {
 
         [System.IO.File]::WriteAllText($stateFile, $payload, [System.Text.Encoding]::UTF8)
     } catch {
-        # Silent ignore to avoid disrupting prompt
+        # Silent ignore
     }
 }
+
+# Immediately broadcast state on profile load
+Update-DiscordTerminalState
 
 # Hook into PowerShell prompt
 if (Test-Path Function:\prompt) {
