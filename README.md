@@ -7,7 +7,8 @@ Aplikasi Discord Rich Presence yang ringan, kreatif, interaktif, dan menjaga pri
 ## ✨ Fitur Utama
 
 - ⚡ **Ringan & Cepat**: Menggunakan IPC socket/pipe bawaan tanpa pustaka berat.
-- 🎨 **Interaktif & Aesthetic**: Menampilkan status shell aktif (PowerShell ⚡, CMD 💻, WSL 🐧, Terminal 🖥️), jumlah tab aktif, dan direktori kerja saat ini.
+- 🎨 **Interaktif & Aesthetic**: Menampilkan status shell aktif (PowerShell ⚡, CMD 💻, WSL 🐧, Terminal 🖥️), jumlah tab aktif, context nama user/SSH (misal `morph@potion:`), dan direktori kerja saat ini.
+- 🏷️ **Hover Title Custom**: Saat icon presence di-hover mouse di Discord, secara default akan menampilkan nama **Console**.
 - 🔒 **Menjaga Privasi**:
   - `folder`: Hanya menampilkan nama folder/proyek aktif (contoh: `📁 my-project`).
   - `full`: Menampilkan direktori lengkap dengan penyamaan path rumah (`~`).
@@ -50,7 +51,7 @@ irm https://raw.githubusercontent.com/moccalatte/discord-presence/main/install.p
 
 ---
 
-### 2. Konfigurasi Client ID & Mode Privasi
+### 2. Konfigurasi Client ID, Assets, & Mode Privasi
 Buka file `config.json` di folder utama project ini, ganti `client_id` dengan Application ID milikmu:
 
 ```json
@@ -67,13 +68,17 @@ Buka file `config.json` di folder utama project ini, ganti `client_id` dengan Ap
     "terminal": "🖥️",
     "folder": "📁",
     "idle": "💤"
+  },
+  "assets": {
+    "large_image": "terminal_main",
+    "large_text": "Console"
   }
 }
 ```
 
 ---
 
-### 3. Integrasi Shell Profile (Mendukung Deteksi Folder Aktif)
+### 3. Integrasi Shell Profile (Mendukung Deteksi Folder & Context User)
 
 #### 🔹 Untuk PowerShell
 1. Buka PowerShell dan ketik `notepad $PROFILE`.
@@ -88,17 +93,32 @@ Buka file `config.json` di folder utama project ini, ganti `client_id` dengan Ap
 
 ---
 
-### 4. Menjalankan & Autostart saat Windows Startup
+### 4. Menjalankan, Mematikan, & Autostart saat Windows Startup
 
 #### 🏃 Menjalankan Manual
 Jalankan file Python utama:
 ```bash
 python terminal_rpc.py
 ```
-Atau tanpa jendela konsol:
+Atau tanpa jendela konsol (background mode):
 ```cmd
 pythonw terminal_rpc.py
 ```
+
+#### 🛑 Cara Mematikan Background Process (`pythonw.exe`)
+Jika aplikasi berjalan di background via `pythonw.exe` dan kamu ingin menghentikannya:
+
+**Via Command Prompt / PowerShell:**
+```cmd
+taskkill /f /im pythonw.exe
+```
+
+**Via Windows Task Manager:**
+1. Tekan `Ctrl + Shift + Esc` untuk membuka Task Manager.
+2. Cari **Python** atau **pythonw.exe** di daftar Processes.
+3. Klik kanan lalu pilih **End Task**.
+
+---
 
 #### 🚀 Mengaktifkan Autostart saat Startup Windows
 1. Klik dua kali pada file `install_autostart.bat`.

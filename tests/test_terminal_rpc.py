@@ -31,6 +31,7 @@ class TestTerminalRPC(unittest.TestCase):
         config = load_config("non_existent_config.json")
         self.assertIn("client_id", config)
         self.assertEqual(config["privacy_mode"], "folder")
+        self.assertEqual(config["assets"]["large_text"], "Console")
 
         # Custom config load
         with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".json") as tf:
@@ -47,7 +48,7 @@ class TestTerminalRPC(unittest.TestCase):
 
     def test_read_shell_state(self):
         with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".json") as tf:
-            json.dump({"shell": "PowerShell", "cwd": "C:/Projects/demo"}, tf)
+            json.dump({"shell": "PowerShell", "cwd": "C:/Projects/demo", "user": "morph@potion:"}, tf)
             tf_path = tf.name
 
         try:
@@ -55,6 +56,7 @@ class TestTerminalRPC(unittest.TestCase):
             self.assertIsNotNone(state)
             self.assertEqual(state["shell"], "PowerShell")
             self.assertEqual(state["cwd"], "C:/Projects/demo")
+            self.assertEqual(state["user"], "morph@potion:")
         finally:
             if os.path.exists(tf_path):
                 os.remove(tf_path)
@@ -78,14 +80,14 @@ class TestTerminalRPC(unittest.TestCase):
         idle_status = format_status([], None, config)
         self.assertIn("💤", idle_status["details"])
 
-        # Active case
+        # Active case with user context
         active_shells = ["powershell.exe", "powershell.exe"]
-        state_data = {"shell": "PowerShell", "cwd": "/home/user/project/my-api"}
+        state_data = {"shell": "PowerShell", "cwd": "/home/user/project/my-api", "user": "morph@potion:"}
         active_status = format_status(active_shells, state_data, config)
 
         self.assertIn("⚡ PowerShell", active_status["details"])
         self.assertIn("2 tabs", active_status["details"])
-        self.assertIn("📁 my-api", active_status["state"])
+        self.assertIn("📁 morph@potion: my-api", active_status["state"])
 
 if __name__ == "__main__":
     unittest.main()

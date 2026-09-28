@@ -70,7 +70,7 @@ def load_config(config_path="config.json"):
         },
         "assets": {
             "large_image": "terminal_main",
-            "large_text": "Terminal Discord Presence",
+            "large_text": "Console",
             "powershell_small_image": "powershell_icon",
             "powershell_small_text": "PowerShell",
             "cmd_small_image": "cmd_icon",
@@ -161,14 +161,19 @@ def format_status(active_shells, state_data, config):
     tab_count = len(active_shells) if active_shells else 1
     tab_str = f" ({tab_count} tab{'s' if tab_count > 1 else ''})" if config.get("show_tabs") and tab_count > 1 else ""
 
-    # Directory string calculation
+    # User context (e.g., morph@potion: or C:/Users/takea) & Directory string calculation
     cwd = state_data.get("cwd") if state_data else None
+    user_ctx = state_data.get("user") if state_data else None
     folder_emoji = emojis.get("folder", "📁")
+
     if cwd:
         sanitized_cwd = sanitize_path(cwd, privacy)
-        state_str = f"{folder_emoji} {sanitized_cwd}"
+        if user_ctx:
+            state_str = f"{folder_emoji} {user_ctx} {sanitized_cwd}"
+        else:
+            state_str = f"{folder_emoji} {sanitized_cwd}"
     else:
-        state_str = f"{folder_emoji} Hacking away"
+        state_str = f"{folder_emoji} {user_ctx if user_ctx else 'Hacking away'}"
 
     details_str = f"{shell_emoji} {shell_name}{tab_str}"
 
@@ -265,7 +270,7 @@ class DiscordIPC:
                     "state": activity_data["state"],
                     "assets": {
                         "large_image": activity_data.get("large_image", "terminal_main"),
-                        "large_text": activity_data.get("large_text", "Terminal Discord Presence"),
+                        "large_text": activity_data.get("large_text", "Console"),
                     }
                 }
             },
@@ -336,7 +341,7 @@ def main():
 
             status = format_status(active_shells, state_data, config)
             status["large_image"] = config.get("assets", {}).get("large_image", "terminal_main")
-            status["large_text"] = config.get("assets", {}).get("large_text", "Terminal Discord Presence")
+            status["large_text"] = config.get("assets", {}).get("large_text", "Console")
 
             try:
                 ipc.set_activity(status, start_time=start_time)
