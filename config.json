@@ -1,0 +1,29 @@
+{
+  "client_id": "1234567890123456789",
+  "privacy_mode": "folder",
+  "update_interval": 5,
+  "show_tabs": true,
+  "show_elapsed": true,
+  "show_active_shell": true,
+  "default_shell": "PowerShell",
+  "emojis": {
+    "powershell": "⚡",
+    "cmd": "💻",
+    "wsl": "🐧",
+    "terminal": "🖥️",
+    "folder": "📁",
+    "idle": "💤"
+  },
+  "assets": {
+    "large_image": "terminal_main",
+    "large_text": "Terminal Discord Presence",
+    "powershell_small_image": "powershell_icon",
+    "powershell_small_text": "PowerShell",
+    "cmd_small_image": "cmd_icon",
+    "cmd_small_text": "Command Prompt",
+    "wsl_small_image": "wsl_icon",
+    "wsl_small_text": "WSL (Linux)",
+    "terminal_small_image": "terminal_icon",
+    "terminal_small_text": "Windows Terminal"
+  }
+}
