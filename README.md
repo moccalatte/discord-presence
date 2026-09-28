@@ -16,6 +16,28 @@ Aplikasi Discord Rich Presence yang ringan, kreatif, interaktif, dan menjaga pri
 
 ---
 
+## 📥 Cara Download & Instalasi
+
+Pilih salah satu cara di bawah ini yang paling mudah untukmu:
+
+### Opsi A: Menggunakan Git Clone (Direkomendasikan)
+Buka Terminal / PowerShell / CMD lalu jalankan:
+```bash
+git clone https://github.com/username/terminal-discord-presence.git
+cd terminal-discord-presence
+```
+
+---
+
+### Opsi B: Instalasi Cepat via PowerShell (`irm` One-Liner)
+Buka PowerShell dan jalankan perintah berikut untuk mengunduh project secara langsung:
+```powershell
+irm https://raw.githubusercontent.com/username/terminal-discord-presence/main/install.ps1 | iex
+```
+*(Atau jika sudah download/unzip repo ini, buka folder project lalu ikuti panduan langkah di bawah)*
+
+---
+
 ## 🛠️ Panduan Langkah-demi-Langkah (Step-by-Step)
 
 ### 1. Persiapan Discord Developer Portal
