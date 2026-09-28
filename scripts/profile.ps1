@@ -13,9 +13,10 @@ function Update-DiscordTerminalState {
             $userContext = "$($env:USERNAME)@$($env:COMPUTERNAME):"
         }
 
+        $currentCwd = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.Path
         $payload = @{
             shell = $shellName
-            cwd = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.Path
+            cwd = $currentCwd
             user = $userContext
             timestamp = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
         } | ConvertTo-Json -Compress
@@ -26,7 +27,7 @@ function Update-DiscordTerminalState {
     }
 }
 
-# Immediately broadcast state on profile load
+# Immediately update state on profile initialization
 Update-DiscordTerminalState
 
 # Hook into PowerShell prompt

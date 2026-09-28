@@ -182,7 +182,7 @@ def format_status(active_shells, state_data, config):
             small_text = assets.get("wsl_small_text", "WSL (Linux)")
             shell_emoji = emojis.get("wsl", "🐧")
 
-    # Tab count calculation
+    # Tab count calculation: count user interactive shells
     tab_count = len(active_shells) if active_shells else 1
     tab_str = f" ({tab_count} tab{'s' if tab_count > 1 else ''})" if config.get("show_tabs") and tab_count > 1 else ""
 
@@ -325,14 +325,12 @@ class DiscordIPC:
 
 def scan_running_terminals():
     """
-    Detects active terminal and shell processes (PowerShell, CMD, Windows Terminal, WSL).
-    Supports Windows tasklist and Linux/Unix ps scanning.
+    Detects active user terminal and shell processes (PowerShell, CMD, Windows Terminal, WSL).
+    Excludes background host helpers (conhost, wslhost, tasklist, etc.) to count true interactive tabs accurately.
     """
     running_shells = []
-    target_procs = [
-        "powershell.exe", "pwsh.exe", "cmd.exe", "windowsterminal.exe",
-        "wt.exe", "conhost.exe", "wsl.exe", "bash", "zsh", "powershell", "pwsh", "cmd"
-    ]
+    # Primary interactive shells that constitute open tabs
+    primary_shells = ["powershell.exe", "pwsh.exe", "cmd.exe", "windowsterminal.exe", "bash", "zsh"]
 
     if sys.platform == "win32":
         try:
@@ -344,7 +342,7 @@ def scan_running_terminals():
                 parts = line.split('","')
                 if parts:
                     proc_name = parts[0].replace('"', '').strip().lower()
-                    if proc_name in target_procs:
+                    if proc_name in primary_shells:
                         running_shells.append(proc_name)
         except Exception:
             pass
@@ -354,7 +352,7 @@ def scan_running_terminals():
             output = subprocess.check_output(["ps", "-ax", "-o", "comm="]).decode("utf-8", errors="ignore")
             for line in output.splitlines():
                 proc_name = os.path.basename(line.strip()).lower()
-                if proc_name in target_procs:
+                if proc_name in primary_shells:
                     running_shells.append(proc_name)
         except Exception:
             pass

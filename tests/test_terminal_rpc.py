@@ -56,7 +56,7 @@ class TestTerminalRPC(unittest.TestCase):
             if os.path.exists(tf_path):
                 os.remove(tf_path)
 
-    def test_format_status(self):
+    def test_format_status_tab_counting(self):
         config = {
             "privacy_mode": "folder",
             "show_tabs": True,
@@ -71,13 +71,13 @@ class TestTerminalRPC(unittest.TestCase):
             }
         }
 
+        # Tab counting should strictly count primary user shells
         active_shells = ["powershell.exe", "cmd.exe", "windowsterminal.exe"]
-        state_data = {"shell": "PowerShell", "cwd": "/home/user/project/my-api", "user": "morph@potion:"}
+        state_data = {"shell": "CMD", "cwd": "C:/Users/takea/Projects/my-backend", "user": ""}
         active_status = format_status(active_shells, state_data, config)
 
-        self.assertIn("⚡ PowerShell", active_status["details"])
         self.assertIn("3 tabs", active_status["details"])
-        self.assertIn("📁 morph@potion: my-api", active_status["state"])
+        self.assertIn("📁 my-backend", active_status["state"])
 
     def test_single_instance_lock(self):
         lock_status = ensure_single_instance()

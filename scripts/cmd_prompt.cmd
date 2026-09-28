@@ -1,5 +1,16 @@
 @echo off
 :: CMD Prompt Hook Integration for Terminal Discord Presence
-:: Usage: set PROMPT=$G$S & call scripts\cmd_prompt.cmd
+:: Native CMD batch script without spawning external processes
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$cwd = (Get-Location).Path.Replace('\','/'); $user = if ($env:SSH_TTY) { \"$($env:USERNAME)@$($env:COMPUTERNAME):\" } else { '' }; $data = @{ shell='CMD'; cwd=$cwd; user=$user; timestamp=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds() }; $json = $data | ConvertTo-Json -Compress; $path = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'discord_terminal_state.json'); [System.IO.File]::WriteAllText($path, $json)" >nul 2>&1
+set "STATE_FILE=%TEMP%\discord_terminal_state.json"
+set "SAFE_CWD=%CD:\=/%"
+
+if defined SSH_TTY (
+    set "USER_CTX=%USERNAME%@%COMPUTERNAME%:"
+) else if defined SSH_CONNECTION (
+    set "USER_CTX=%USERNAME%@%COMPUTERNAME%:"
+) else (
+    set "USER_CTX="
+)
+
+echo {"shell": "CMD", "cwd": "%SAFE_CWD%", "user": "%USER_CTX%", "timestamp": %TIME:~0,2%%TIME:~3,2%%TIME:~6,2%}> "%STATE_FILE%" 2>nul

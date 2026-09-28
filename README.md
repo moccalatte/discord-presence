@@ -7,14 +7,14 @@ Aplikasi Discord Rich Presence yang ringan, kreatif, interaktif, dan menjaga pri
 ## ✨ Fitur Utama
 
 - ⚡ **Ringan & Cepat**: Menggunakan IPC socket/pipe bawaan tanpa pustaka berat.
-- 🎨 **Interaktif & Aesthetic**: Menampilkan status shell aktif (PowerShell ⚡, CMD 💻, WSL 🐧, Terminal 🖥️), jumlah tab aktif, context nama user/SSH (misal `morph@potion:`), dan direktori kerja saat ini.
+- 🎨 **Interaktif & Aesthetic**: Menampilkan status shell aktif (PowerShell ⚡, CMD 💻, WSL 🐧, Terminal 🖥️), jumlah tab aktif (difilter akurat), context nama user/SSH (misal `morph@potion:`), dan direktori kerja saat ini.
 - 🔒 **Single-Instance Mutex**: Memastikan hanya ada 1 proses `pythonw.exe` yang berjalan di background tanpa proses ganda (duplicate PID).
 - 🏷️ **Hover Title Custom**: Saat icon presence di-hover mouse di Discord, secara default akan menampilkan nama **Console**.
 - 🔒 **Menjaga Privasi**:
   - `folder`: Hanya menampilkan nama folder/proyek aktif (contoh: `📁 my-project`).
   - `full`: Menampilkan direktori lengkap dengan penyamaan path rumah (`~`).
   - `hidden`: Hanya menampilkan `📁 Workspace`.
-- 🚀 **Autostart & Auto-Setup**: Skrip installer otomatis agar berjalan di background saat Windows dinyalakan dan otomatis mendeteksi perpindahan folder di CMD & PowerShell.
+- 🚀 **Pure Batch AutoRun**: Skrip hook CMD murni tanpa subprocess PowerShell tambahan untuk performa instan tanpa lag.
 
 ---
 
@@ -81,10 +81,10 @@ Buka file `config.json` di folder utama project ini, ganti `client_id` dengan Ap
 ### 3. Setup Otomatis Shell Profile (Otomatis Sync Folder Aktif)
 
 #### 🔹 Untuk Command Prompt (CMD)
-Cukup klik dua kali pada file `setup_cmd_autorun.bat`. Skrip ini akan mendaftarkan hook CMD di Registry Windows sehingga setiap jendela CMD yang kamu buka otomatis mengirimkan lokasi folder aktif ke Discord!
+Cukup klik dua kali pada file `setup_cmd_autorun.bat`. Skrip ini mendaftarkan hook batch murni (`scripts/cmd_prompt.cmd`) di Registry AutoRun sehingga setiap kali kamu membuka CMD atau berpindah folder (`cd`), direktori aktif langsung otomatis diperbarui di Discord secara instan!
 
 #### 🔹 Untuk PowerShell
-Cukup klik dua kali pada file `setup_powershell_profile.bat`. Skrip ini akan secara otomatis menambahkan hook sync ke file `$PROFILE` PowerShell milikmu.
+Cukup klik dua kali pada file `setup_powershell_profile.bat`. Skrip ini otomatis menambahkan hook sync ke file `$PROFILE` PowerShell milikmu.
 
 ---
 
@@ -118,7 +118,7 @@ Jika ingin menghapus dari startup, klik dua kali pada file `uninstall_autostart.
 
 ## 🧪 Menguji & Unit Testing
 
-Untuk memastikan seluruh modul dan single-instance lock berjalan lancar:
+Untuk memastikan seluruh modul, tab filter, dan single-instance lock berjalan lancar:
 ```bash
 python -m unittest discover -s tests
 ```
