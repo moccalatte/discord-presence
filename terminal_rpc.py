@@ -22,17 +22,21 @@ OP_PING = 3
 OP_PONG = 4
 
 LOCK_PORT = 64321
+_LOCK_SOCKET = None  # Global handle to prevent garbage collection releasing lock socket
 
 def ensure_single_instance():
     """
     Ensures that only one instance of terminal_rpc.py runs at a time.
-    Binds a local socket port as a mutex lock.
+    Binds a local socket port as a mutex lock and retains the global reference.
     """
+    global _LOCK_SOCKET
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind(("127.0.0.1", LOCK_PORT))
         s.listen(1)
-        return s
+        _LOCK_SOCKET = s
+        return True
     except Exception:
         print("[Notice] Another instance of Terminal Discord Presence is already running. Exiting.")
         sys.exit(0)
@@ -229,8 +233,8 @@ class DiscordIPC:
                 if sys.platform == "win32":
                     self.handle = open(pipe_path, "r+b", buffering=0)
                 else:
-                    import socket
-                    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                    import socket as py_socket
+                    s = py_socket.socket(py_socket.AF_UNIX, py_socket.SOCK_STREAM)
                     s.connect(pipe_path)
                     self.handle = s
 
@@ -358,7 +362,7 @@ def scan_running_terminals():
     return running_shells
 
 def main():
-    lock_socket = ensure_single_instance()
+    ensure_single_instance()
 
     config = load_config()
     client_id = config.get("client_id")

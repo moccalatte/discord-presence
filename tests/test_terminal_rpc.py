@@ -9,17 +9,14 @@ from terminal_rpc import sanitize_path, load_config, read_shell_state, format_st
 class TestTerminalRPC(unittest.TestCase):
 
     def test_sanitize_path_folder_mode(self):
-        # Folder mode returns last directory name
         path = os.path.join("C:", "Users", "Dev", "Projects", "my-awesome-app")
         self.assertEqual(sanitize_path(path, privacy_mode="folder"), "my-awesome-app")
 
     def test_sanitize_path_hidden_mode(self):
-        # Hidden mode returns static placeholder
         path = os.path.join("C:", "Users", "Dev", "SecretFolder")
         self.assertEqual(sanitize_path(path, privacy_mode="hidden"), "Workspace")
 
     def test_sanitize_path_full_mode(self):
-        # Full mode replaces home path with ~
         home = str(Path.home())
         sub_path = os.path.join(home, "Projects", "test")
         sanitized = sanitize_path(sub_path, privacy_mode="full")
@@ -27,13 +24,11 @@ class TestTerminalRPC(unittest.TestCase):
         self.assertIn("/Projects/test", sanitized)
 
     def test_load_config_default_and_custom(self):
-        # Default config load
         config = load_config("non_existent_config.json")
         self.assertIn("client_id", config)
         self.assertEqual(config["privacy_mode"], "folder")
         self.assertEqual(config["assets"]["large_text"], "Console")
 
-        # Custom config load
         with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".json") as tf:
             json.dump({"privacy_mode": "full", "client_id": "99999"}, tf)
             tf_path = tf.name
@@ -76,7 +71,6 @@ class TestTerminalRPC(unittest.TestCase):
             }
         }
 
-        # Active case with user context and dynamic state
         active_shells = ["powershell.exe", "cmd.exe", "windowsterminal.exe"]
         state_data = {"shell": "PowerShell", "cwd": "/home/user/project/my-api", "user": "morph@potion:"}
         active_status = format_status(active_shells, state_data, config)
@@ -86,9 +80,8 @@ class TestTerminalRPC(unittest.TestCase):
         self.assertIn("📁 morph@potion: my-api", active_status["state"])
 
     def test_single_instance_lock(self):
-        lock_socket = ensure_single_instance()
-        self.assertIsNotNone(lock_socket)
-        lock_socket.close()
+        lock_status = ensure_single_instance()
+        self.assertTrue(lock_status)
 
 if __name__ == "__main__":
     unittest.main()

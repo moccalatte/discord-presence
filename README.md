@@ -8,12 +8,13 @@ Aplikasi Discord Rich Presence yang ringan, kreatif, interaktif, dan menjaga pri
 
 - ⚡ **Ringan & Cepat**: Menggunakan IPC socket/pipe bawaan tanpa pustaka berat.
 - 🎨 **Interaktif & Aesthetic**: Menampilkan status shell aktif (PowerShell ⚡, CMD 💻, WSL 🐧, Terminal 🖥️), jumlah tab aktif, context nama user/SSH (misal `morph@potion:`), dan direktori kerja saat ini.
+- 🔒 **Single-Instance Mutex**: Memastikan hanya ada 1 proses `pythonw.exe` yang berjalan di background tanpa proses ganda (duplicate PID).
 - 🏷️ **Hover Title Custom**: Saat icon presence di-hover mouse di Discord, secara default akan menampilkan nama **Console**.
 - 🔒 **Menjaga Privasi**:
   - `folder`: Hanya menampilkan nama folder/proyek aktif (contoh: `📁 my-project`).
   - `full`: Menampilkan direktori lengkap dengan penyamaan path rumah (`~`).
   - `hidden`: Hanya menampilkan `📁 Workspace`.
-- 🚀 **Autostart**: Skrip installer otomatis agar berjalan tanpa jendela hitam (silent background) saat Windows dinyalakan.
+- 🚀 **Autostart & Auto-Setup**: Skrip installer otomatis agar berjalan di background saat Windows dinyalakan dan otomatis mendeteksi perpindahan folder di CMD & PowerShell.
 
 ---
 
@@ -35,7 +36,6 @@ Buka PowerShell dan jalankan perintah berikut untuk mengunduh project secara lan
 ```powershell
 irm https://raw.githubusercontent.com/moccalatte/discord-presence/main/install.ps1 | iex
 ```
-*(Atau jika sudah download/unzip repo ini, buka folder project lalu ikuti panduan langkah di bawah)*
 
 ---
 
@@ -51,14 +51,14 @@ irm https://raw.githubusercontent.com/moccalatte/discord-presence/main/install.p
 
 ---
 
-### 2. Konfigurasi Client ID, Assets, & Mode Privasi
+### 2. Konfigurasi Client ID & Mode Privasi
 Buka file `config.json` di folder utama project ini, ganti `client_id` dengan Application ID milikmu:
 
 ```json
 {
   "client_id": "MASUKKAN_CLIENT_ID_DISCORD_KAMU_DISINI",
   "privacy_mode": "folder",
-  "update_interval": 5,
+  "update_interval": 3,
   "show_tabs": true,
   "show_elapsed": true,
   "emojis": {
@@ -78,18 +78,13 @@ Buka file `config.json` di folder utama project ini, ganti `client_id` dengan Ap
 
 ---
 
-### 3. Integrasi Shell Profile (Mendukung Deteksi Folder & Context User)
-
-#### 🔹 Untuk PowerShell
-1. Buka PowerShell dan ketik `notepad $PROFILE`.
-2. Salin seluruh isi dari file `scripts/profile.ps1` dan tempelkan ke file `$PROFILE` kamu.
-3. Simpan dan tutup Notepad. Setiap kali kamu berpindah direktori di PowerShell, status folder akan otomatis diperbarui di Discord!
+### 3. Setup Otomatis Shell Profile (Otomatis Sync Folder Aktif)
 
 #### 🔹 Untuk Command Prompt (CMD)
-1. Buka CMD dan panggil skrip hook saat membuka prompt:
-   ```cmd
-   call scripts\cmd_prompt.cmd
-   ```
+Cukup klik dua kali pada file `setup_cmd_autorun.bat`. Skrip ini akan mendaftarkan hook CMD di Registry Windows sehingga setiap jendela CMD yang kamu buka otomatis mengirimkan lokasi folder aktif ke Discord!
+
+#### 🔹 Untuk PowerShell
+Cukup klik dua kali pada file `setup_powershell_profile.bat`. Skrip ini akan secara otomatis menambahkan hook sync ke file `$PROFILE` PowerShell milikmu.
 
 ---
 
@@ -106,24 +101,15 @@ pythonw terminal_rpc.py
 ```
 
 #### 🛑 Cara Mematikan Background Process (`pythonw.exe`)
-Jika aplikasi berjalan di background via `pythonw.exe` dan kamu ingin menghentikannya:
-
-**Via Command Prompt / PowerShell:**
+Gunakan perintah berikut di CMD / PowerShell jika ingin menghentikan service:
 ```cmd
 taskkill /f /im pythonw.exe
 ```
 
-**Via Windows Task Manager:**
-1. Tekan `Ctrl + Shift + Esc` untuk membuka Task Manager.
-2. Cari **Python** atau **pythonw.exe** di daftar Processes.
-3. Klik kanan lalu pilih **End Task**.
-
----
-
 #### 🚀 Mengaktifkan Autostart saat Startup Windows
 1. Klik dua kali pada file `install_autostart.bat`.
-2. Skrip akan membuat pintasan di folder Windows Startup secara otomatis.
-3. Aplikasi akan langsung berjalan di background secara senyap (silent mode via `runner.vbs`) saat komputer kamu menyala!
+2. Skrip akan membuat pintasan di folder Windows Startup secara otomatis (`runner.vbs`).
+3. Service akan berjalan senyap di background secara otomatis setiap komputer menyala.
 
 #### ❌ Menghentikan Autostart
 Jika ingin menghapus dari startup, klik dua kali pada file `uninstall_autostart.bat`.
@@ -132,7 +118,7 @@ Jika ingin menghapus dari startup, klik dua kali pada file `uninstall_autostart.
 
 ## 🧪 Menguji & Unit Testing
 
-Untuk memastikan semua modul berjalan baik tanpa kesalahan:
+Untuk memastikan seluruh modul dan single-instance lock berjalan lancar:
 ```bash
 python -m unittest discover -s tests
 ```
