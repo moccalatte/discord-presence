@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from terminal_rpc import sanitize_path, load_config, read_shell_state, format_status, scan_running_terminals, ensure_single_instance
+from terminal_rpc import sanitize_path, load_config, read_shell_state, format_status, scan_running_terminals, ensure_single_instance, get_foreground_window_title
 
 class TestTerminalRPC(unittest.TestCase):
 
@@ -56,7 +56,7 @@ class TestTerminalRPC(unittest.TestCase):
             if os.path.exists(tf_path):
                 os.remove(tf_path)
 
-    def test_format_status_tab_counting(self):
+    def test_format_status(self):
         config = {
             "privacy_mode": "folder",
             "show_tabs": True,
@@ -71,7 +71,6 @@ class TestTerminalRPC(unittest.TestCase):
             }
         }
 
-        # Tab counting should strictly count primary user shells
         active_shells = ["powershell.exe", "cmd.exe", "windowsterminal.exe"]
         state_data = {"shell": "CMD", "cwd": "C:/Users/takea/Projects/my-backend", "user": ""}
         active_status = format_status(active_shells, state_data, config)
@@ -82,6 +81,11 @@ class TestTerminalRPC(unittest.TestCase):
     def test_single_instance_lock(self):
         lock_status = ensure_single_instance()
         self.assertTrue(lock_status)
+
+    def test_foreground_window_title_function(self):
+        # Function returns string or None depending on OS and focus
+        res = get_foreground_window_title()
+        self.assertTrue(res is None or isinstance(res, str))
 
 if __name__ == "__main__":
     unittest.main()

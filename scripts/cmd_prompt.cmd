@@ -13,4 +13,4 @@ if defined SSH_TTY (
     set "USER_CTX="
 )
 
-echo {"shell": "CMD", "cwd": "%SAFE_CWD%", "user": "%USER_CTX%", "timestamp": %TIME:~0,2%%TIME:~3,2%%TIME:~6,2%}> "%STATE_FILE%" 2>nul
+echo {"shell": "CMD", "cwd": "%SAFE_CWD%", "user": "%USER_CTX%", "timestamp": 0}> "%STATE_FILE%" 2>nul

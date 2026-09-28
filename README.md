@@ -8,13 +8,14 @@ Aplikasi Discord Rich Presence yang ringan, kreatif, interaktif, dan menjaga pri
 
 - ⚡ **Ringan & Cepat**: Menggunakan IPC socket/pipe bawaan tanpa pustaka berat.
 - 🎨 **Interaktif & Aesthetic**: Menampilkan status shell aktif (PowerShell ⚡, CMD 💻, WSL 🐧, Terminal 🖥️), jumlah tab aktif (difilter akurat), context nama user/SSH (misal `morph@potion:`), dan direktori kerja saat ini.
-- 🔒 **Single-Instance Mutex**: Memastikan hanya ada 1 proses `pythonw.exe` yang berjalan di background tanpa proses ganda (duplicate PID).
+- 🛡️ **Windows OS Native Mutex**: Mencegah proses ganda (`pythonw.exe`) secara absolut di tingkat Sistem Operasi dengan Kernel32 `CreateMutexW`.
+- 🔍 **Active Window Fallback**: Mendeteksi judul jendela terminal aktif (Windows Terminal, CMD, PowerShell) secara dinamis.
 - 🏷️ **Hover Title Custom**: Saat icon presence di-hover mouse di Discord, secara default akan menampilkan nama **Console**.
 - 🔒 **Menjaga Privasi**:
   - `folder`: Hanya menampilkan nama folder/proyek aktif (contoh: `📁 my-project`).
   - `full`: Menampilkan direktori lengkap dengan penyamaan path rumah (`~`).
   - `hidden`: Hanya menampilkan `📁 Workspace`.
-- 🚀 **Pure Batch AutoRun**: Skrip hook CMD murni tanpa subprocess PowerShell tambahan untuk performa instan tanpa lag.
+- 🚀 **Pure Batch AutoRun**: Skrip hook CMD murni tanpa subprocess tambahan untuk performa instan tanpa lag.
 
 ---
 
@@ -118,7 +119,7 @@ Jika ingin menghapus dari startup, klik dua kali pada file `uninstall_autostart.
 
 ## 🧪 Menguji & Unit Testing
 
-Untuk memastikan seluruh modul, tab filter, dan single-instance lock berjalan lancar:
+Untuk memastikan seluruh modul, native mutex, dan fallback window detection berjalan lancar:
 ```bash
 python -m unittest discover -s tests
 ```
