@@ -36,17 +36,24 @@ def sanitize_path(path_str, privacy_mode="folder"):
     if not path_str or privacy_mode == "hidden":
         return "Workspace"
 
+    # Normalize backslashes
+    path_str = path_str.replace("\\", "/")
+    if path_str.endswith("/") and len(path_str) > 1 and not path_str.endswith(":/"):
+        path_str = path_str.rstrip("/")
+
     path_obj = Path(path_str)
 
     if privacy_mode == "folder":
         folder_name = path_obj.name
-        return folder_name if folder_name else path_str
+        if not folder_name or folder_name.endswith(":"):
+            return path_str
+        return folder_name
 
     if privacy_mode == "full":
-        home = str(Path.home())
+        home = str(Path.home()).replace("\\", "/")
         if path_str.startswith(home):
             path_str = "~" + path_str[len(home):]
-        return path_str.replace("\\", "/")
+        return path_str
 
     return path_obj.name or path_str
 
@@ -55,7 +62,7 @@ def load_config(config_path="config.json"):
     default_config = {
         "client_id": "1234567890123456789",
         "privacy_mode": "folder",
-        "update_interval": 5,
+        "update_interval": 3,
         "show_tabs": True,
         "show_elapsed": True,
         "show_active_shell": True,
@@ -108,34 +115,35 @@ def read_shell_state(state_path=None):
 def format_status(active_shells, state_data, config):
     """
     Formats details, state, and asset info for Discord activity payload.
-    Returns dict with keys: details, state, small_image, small_text.
+    Ensures active directory and tabs are always dynamically rendered.
     """
     emojis = config.get("emojis", {})
     assets = config.get("assets", {})
     privacy = config.get("privacy_mode", "folder")
 
+    # If no processes found and no state file present, show idle
     if not active_shells and not state_data:
         return {
-            "details": f"{emojis.get('idle', '💤')} Resting / Idle",
+            "details": f"{emojis.get('idle', '💤')} Idle / Resting",
             "state": "No active terminal",
             "small_image": None,
             "small_text": None
         }
 
-    # Determine shell type
+    # Determine shell type and icon
     shell_name = "PowerShell"
     small_image = assets.get("powershell_small_image", "powershell_icon")
     small_text = assets.get("powershell_small_text", "PowerShell")
     shell_emoji = emojis.get("powershell", "⚡")
 
     if state_data and "shell" in state_data:
-        raw_shell = state_data["shell"].lower()
+        raw_shell = str(state_data["shell"]).lower()
         if "cmd" in raw_shell:
             shell_name = "CMD"
             small_image = assets.get("cmd_small_image", "cmd_icon")
             small_text = assets.get("cmd_small_text", "Command Prompt")
             shell_emoji = emojis.get("cmd", "💻")
-        elif "wsl" in raw_shell or "bash" in raw_shell:
+        elif "wsl" in raw_shell or "bash" in raw_shell or "zsh" in raw_shell:
             shell_name = "WSL"
             small_image = assets.get("wsl_small_image", "wsl_icon")
             small_text = assets.get("wsl_small_text", "WSL (Linux)")
@@ -146,22 +154,28 @@ def format_status(active_shells, state_data, config):
             small_text = assets.get("terminal_small_text", "Windows Terminal")
             shell_emoji = emojis.get("terminal", "🖥️")
     elif active_shells:
-        if "cmd.exe" in active_shells:
+        shells_lower = [s.lower() for s in active_shells]
+        if any("cmd" in s for s in shells_lower):
             shell_name = "CMD"
             small_image = assets.get("cmd_small_image", "cmd_icon")
             small_text = assets.get("cmd_small_text", "Command Prompt")
             shell_emoji = emojis.get("cmd", "💻")
-        elif "WindowsTerminal.exe" in active_shells:
+        elif any("windowsterminal" in s or "wt.exe" in s for s in shells_lower):
             shell_name = "Windows Terminal"
             small_image = assets.get("terminal_small_image", "terminal_icon")
             small_text = assets.get("terminal_small_text", "Windows Terminal")
             shell_emoji = emojis.get("terminal", "🖥️")
+        elif any("wsl" in s or "bash" in s for s in shells_lower):
+            shell_name = "WSL"
+            small_image = assets.get("wsl_small_image", "wsl_icon")
+            small_text = assets.get("wsl_small_text", "WSL (Linux)")
+            shell_emoji = emojis.get("wsl", "🐧")
 
     # Tab count calculation
     tab_count = len(active_shells) if active_shells else 1
     tab_str = f" ({tab_count} tab{'s' if tab_count > 1 else ''})" if config.get("show_tabs") and tab_count > 1 else ""
 
-    # User context (e.g., morph@potion: or C:/Users/takea) & Directory string calculation
+    # User context and CWD calculation
     cwd = state_data.get("cwd") if state_data else None
     user_ctx = state_data.get("user") if state_data else None
     folder_emoji = emojis.get("folder", "📁")
@@ -173,7 +187,13 @@ def format_status(active_shells, state_data, config):
         else:
             state_str = f"{folder_emoji} {sanitized_cwd}"
     else:
-        state_str = f"{folder_emoji} {user_ctx if user_ctx else 'Hacking away'}"
+        # Fallback to current working directory if available
+        try:
+            fallback_cwd = os.getcwd()
+            sanitized_cwd = sanitize_path(fallback_cwd, privacy)
+            state_str = f"{folder_emoji} {user_ctx + ' ' if user_ctx else ''}{sanitized_cwd}"
+        except Exception:
+            state_str = f"{folder_emoji} {user_ctx if user_ctx else 'Terminal Session'}"
 
     details_str = f"{shell_emoji} {shell_name}{tab_str}"
 
@@ -299,8 +319,16 @@ class DiscordIPC:
             self.handle = None
 
 def scan_running_terminals():
-    """Detect active terminal processes on Windows via tasklist or psutil."""
+    """
+    Detects active terminal and shell processes (PowerShell, CMD, Windows Terminal, WSL).
+    Supports Windows tasklist and Linux/Unix ps scanning.
+    """
     running_shells = []
+    target_procs = [
+        "powershell.exe", "pwsh.exe", "cmd.exe", "windowsterminal.exe",
+        "wt.exe", "conhost.exe", "wsl.exe", "bash", "zsh", "powershell", "pwsh", "cmd"
+    ]
+
     if sys.platform == "win32":
         try:
             import subprocess
@@ -310,17 +338,28 @@ def scan_running_terminals():
                     continue
                 parts = line.split('","')
                 if parts:
-                    proc_name = parts[0].replace('"', '').strip()
-                    if proc_name.lower() in ["powershell.exe", "pwsh.exe", "cmd.exe", "windowsterminal.exe"]:
+                    proc_name = parts[0].replace('"', '').strip().lower()
+                    if proc_name in target_procs:
                         running_shells.append(proc_name)
         except Exception:
             pass
+    else:
+        try:
+            import subprocess
+            output = subprocess.check_output(["ps", "-ax", "-o", "comm="]).decode("utf-8", errors="ignore")
+            for line in output.splitlines():
+                proc_name = os.path.basename(line.strip()).lower()
+                if proc_name in target_procs:
+                    running_shells.append(proc_name)
+        except Exception:
+            pass
+
     return running_shells
 
 def main():
     config = load_config()
     client_id = config.get("client_id")
-    update_interval = config.get("update_interval", 5)
+    update_interval = config.get("update_interval", 3)
     start_time = time.time() if config.get("show_elapsed") else None
 
     print(f"Starting Terminal Discord Rich Presence... (Client ID: {client_id})")

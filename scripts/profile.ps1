@@ -7,10 +7,16 @@ function Update-DiscordTerminalState {
         $stateFile = [System.IO.Path]::Combine($tempDir, "discord_terminal_state.json")
 
         $shellName = if ($PSVersionTable.PSEdition -eq "Core") { "PowerShell Core" } else { "PowerShell" }
+        $userContext = ""
+
+        if ($env:SSH_TTY -or $env:SSH_CONNECTION) {
+            $userContext = "$($env:USERNAME)@$($env:COMPUTERNAME):"
+        }
 
         $payload = @{
             shell = $shellName
             cwd = $ExecutionContext.SessionState.Path.CurrentFileSystemLocation.Path
+            user = $userContext
             timestamp = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
         } | ConvertTo-Json -Compress
 

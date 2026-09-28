@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from terminal_rpc import sanitize_path, load_config, read_shell_state, format_status
+from terminal_rpc import sanitize_path, load_config, read_shell_state, format_status, scan_running_terminals
 
 class TestTerminalRPC(unittest.TestCase):
 
@@ -80,14 +80,19 @@ class TestTerminalRPC(unittest.TestCase):
         idle_status = format_status([], None, config)
         self.assertIn("💤", idle_status["details"])
 
-        # Active case with user context
-        active_shells = ["powershell.exe", "powershell.exe"]
+        # Active case with user context and multiple tabs
+        active_shells = ["powershell.exe", "cmd.exe", "windowsterminal.exe"]
         state_data = {"shell": "PowerShell", "cwd": "/home/user/project/my-api", "user": "morph@potion:"}
         active_status = format_status(active_shells, state_data, config)
 
         self.assertIn("⚡ PowerShell", active_status["details"])
-        self.assertIn("2 tabs", active_status["details"])
+        self.assertIn("3 tabs", active_status["details"])
         self.assertIn("📁 morph@potion: my-api", active_status["state"])
+
+    def test_scan_running_terminals(self):
+        # scan_running_terminals returns a list of detected shell processes
+        shells = scan_running_terminals()
+        self.assertIsInstance(shells, list)
 
 if __name__ == "__main__":
     unittest.main()
